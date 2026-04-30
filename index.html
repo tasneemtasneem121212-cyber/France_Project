@@ -4,107 +4,58 @@
     <title>مشروع خرائط فرنسا - تسنيم</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
-        #map { 
-            height: 650px; 
-            width: 100%; 
-            border: 2px solid #2c3e50;
-            border-radius: 15px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #f0f2f5; 
-            padding: 20px; 
-        }
-        h2 { color: #2c3e50; text-align: center; margin-bottom: 20px; }
-        /* تنسيق الليبل (الأسماء) لتكون واضحة */
+        #map { height: 650px; width: 100%; border-radius: 15px; }
+        body { font-family: sans-serif; background-color: #f0f2f5; padding: 20px; }
         .leaflet-tooltip.my-label {
-            background-color: transparent;
-            border: none;
-            box-shadow: none;
-            color: #ffffff; /* لون الخط أبيض ليظهر فوق الحدود الغامقة */
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid #333;
             font-weight: bold;
-            text-shadow: 1px 1px 2px #000; /* ظل أسود خلف النص لزيادة الوضوح */
-            font-size: 12px;
+            color: #000;
         }
     </style>
 </head>
 <body>
-
-    <h2>خريطة فرنسا التفاعلية - عرض الطبقات مع الأسماء الثابتة</h2>
+    <h2 style="text-align:center;">خريطة فرنسا التفاعلية - الطبقات النهائية</h2>
     <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        // 1. إنشاء الخريطة والتركيز على فرنسا
         var map = L.map('map').setView([46.2276, 2.2137], 6); 
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        // 2. إضافة خريطة الأساس
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
+        // وظيفة التنسيق: سنجعل التعبئة غير شفافة تماماً (1.0)
+        function getStyle(fileName) {
+            return {
+                color: "#2c3e50",     // لون الحدود
+                weight: 2,
+                fillColor: "#3498db", // اللون الأزرق
+                fillOpacity: 1.0,     // القيمة 1 تعني لا يوجد شفافية نهائياً
+                opacity: 1
+            };
+        }
 
-        // 3. تنسيق الطبقات (تعبئة غير شفافة تماماً)
-        var layerStyle = {
-            color: "#2c3e50",     // لون الخط الفاصل
-            weight: 2,            
-            fillColor: "#3498db", // لون التعبئة (أزرق)
-            fillOpacity: 1.0,     // غير شفاف تماماً (Solid)
-            opacity: 1            
-        };
+        var files = ['fr.geojson', 'france.geojson', 'franceregion.geojson', 'marksfrance.geojson'];
 
-        // 4. تنسيق نقاط المعالم
-        var pointStyle = {
-            radius: 7,
-            fillColor: "#e67e22",
-            color: "#fff",
-            weight: 1,
-            opacity: 1,
-            fillOpacity: 1.0
-        };
-
-        // 5. مصفوفة الملفات المرفوعة
-        var geojsonFiles = [
-            { name: 'fr.geojson', type: 'polygon' },
-            { name: 'france.geojson', type: 'polygon' },
-            { name: 'franceregion.geojson', type: 'polygon' },
-            { name: 'marksfrance.geojson', type: 'point' }
-        ];
-
-        // 6. تحميل ومعالجة البيانات
-        geojsonFiles.forEach(function(file) {
-            fetch(file.name)
+        files.forEach(function(fileName) {
+            fetch(fileName)
                 .then(res => res.json())
                 .then(data => {
                     L.geoJSON(data, {
-                        style: function() { return layerStyle; },
+                        style: getStyle(fileName),
                         pointToLayer: function (feature, latlng) {
-                            if (file.type === 'point') {
-                                return L.circleMarker(latlng, pointStyle);
-                            }
+                            return L.circleMarker(latlng, { radius: 6, fillColor: "#e67e22", color: "#000", weight: 1, fillOpacity: 1 });
                         },
                         onEachFeature: function (feature, layer) {
-                            // التحقق من وجود اسم في بيانات الملف
                             var name = feature.properties.NAME_1 || feature.properties.name || "";
-                            
-                            if (name !== "") {
-                                // أ. إضافة فقاعة عند الضغط (Popup)
-                                layer.bindPopup("الاسم: " + name);
-
-                                // ب. إضافة ليبل ثابت يظهر دائماً (Tooltip)
-                                layer.bindTooltip(name, {
-                                    permanent: true,     // ليبل دائم
-                                    direction: "center", // في المنتصف
-                                    className: "my-label", // تنسيق CSS بالأعلى
-                                    offset: [0, 0]
-                                });
+                            if (name) {
+                                layer.bindTooltip(name, { permanent: true, direction: "center", className: "my-label" });
                             }
                         }
                     }).addTo(map);
-                })
-                .catch(err => console.log("خطأ في ملف: " + file.name));
+                });
         });
     </script>
 </body>
 </html>
+
 
