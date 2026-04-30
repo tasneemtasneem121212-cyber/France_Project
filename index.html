@@ -1,88 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>France Map Project</title>
+    <title>France Map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
-        #map { 
-            height: 650px; 
-            width: 100%; 
-            border: 3px solid #5d4037; 
-            border-radius: 15px; 
-        }
-        body { 
-            font-family: sans-serif; 
-            background-color: #fdf5e6; 
-            padding: 20px; 
-        }
-        h2 { 
-            color: #5d4037; 
-            text-align: center; 
-            font-size: 36px; 
-            font-weight: bold; 
-        }
-        .leaflet-tooltip.my-label {
-            background: white;
-            border: 1px solid #5d4037;
-            font-weight: bold;
-            color: #5d4037;
-            padding: 2px 5px;
-            border-radius: 3px;
+        #map { height: 650px; width: 100%; border: 3px solid #5d4037; border-radius: 15px; }
+        body { font-family: sans-serif; background-color: #fdf5e6; padding: 20px; }
+        h1 { color: #5d4037; text-align: center; font-size: 40px; }
+        .label-style {
+            background: white; border: 1px solid #5d4037;
+            font-weight: bold; color: #5d4037; padding: 2px 5px; border-radius: 3px;
         }
     </style>
 </head>
 <body>
-    <h2>France</h2>
+    <h1>France</h1>
     <div id="map"></div>
-
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         var map = L.map('map').setView([46.2276, 2.2137], 6); 
-        
-        // استخدام خريطة أساس بسيطة جداً لضمان عدم التداخل
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        // هذا التنسيق العسلي (غير شفاف 100%)
-        var honeyTheme = {
-            color: "#5d4037",
-            weight: 2,
-            fillColor: "#D2691E", // لون عسلي
-            fillOpacity: 1.0,     // 100% غير شفاف
-            opacity: 1
+        var honeyColor = {
+            color: "#5d4037", weight: 2,
+            fillColor: "#D2691E", // لون عسلي مصمت
+            fillOpacity: 1.0, opacity: 1
         };
 
-        // مصفوفة الملفات
-        var myFiles = ['fr.geojson', 'france.geojson', 'franceregion.geojson', 'marksfrance.geojson'];
+        // قائمة الملفات - تأكدي أن الأسماء مطابقة تماماً لما هو مرفوع عندك
+        var layers = ['fr.geojson', 'france.geojson', 'franceregion.geojson', 'marksfrance.geojson'];
 
-        myFiles.forEach(function(fileName) {
-            // إضافة رقم عشوائي لإجبار المتصفح على جلب النسخة الجديدة
-            fetch(fileName + "?nocache=" + new Date().getTime())
+        layers.forEach(function(file) {
+            fetch(file)
                 .then(res => res.json())
                 .then(data => {
                     L.geoJSON(data, {
-                        style: function() { return honeyTheme; },
+                        style: function() { return honeyColor; },
                         pointToLayer: function (feature, latlng) {
-                            return L.circleMarker(latlng, { 
-                                radius: 8, 
-                                fillColor: "#8B4513", 
-                                color: "#fff", 
-                                weight: 2, 
-                                fillOpacity: 1 
-                            });
+                            return L.circleMarker(latlng, { radius: 8, fillColor: "#8B4513", color: "#fff", weight: 2, fillOpacity: 1 });
                         },
                         onEachFeature: function (feature, layer) {
                             var name = feature.properties.NAME_1 || feature.properties.name || "";
                             if (name) {
-                                layer.bindTooltip(name, { 
-                                    permanent: true, 
-                                    direction: "center", 
-                                    className: "my-label" 
-                                });
+                                layer.bindTooltip(name, { permanent: true, direction: "center", className: "label-style" });
                             }
                         }
                     }).addTo(map);
-                })
-                .catch(err => console.log("خطأ في التحميل"));
+                });
         });
     </script>
 </body>
