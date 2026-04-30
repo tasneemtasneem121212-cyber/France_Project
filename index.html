@@ -4,55 +4,85 @@
     <title>France Map Project</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
-        #map { height: 650px; width: 100%; border: 3px solid #5d4037; border-radius: 15px; }
-        body { font-family: sans-serif; background-color: #fdf5e6; padding: 20px; }
-        h2 { color: #5d4037; text-align: center; font-size: 36px; font-weight: bold; }
+        #map { 
+            height: 650px; 
+            width: 100%; 
+            border: 3px solid #5d4037; 
+            border-radius: 15px; 
+        }
+        body { 
+            font-family: sans-serif; 
+            background-color: #fdf5e6; 
+            padding: 20px; 
+        }
+        h2 { 
+            color: #5d4037; 
+            text-align: center; 
+            font-size: 36px; 
+            font-weight: bold; 
+        }
         .leaflet-tooltip.my-label {
-            background: rgba(255, 255, 255, 0.9);
+            background: white;
             border: 1px solid #5d4037;
             font-weight: bold;
             color: #5d4037;
-            padding: 2px 8px;
-            border-radius: 4px;
+            padding: 2px 5px;
+            border-radius: 3px;
         }
     </style>
 </head>
 <body>
     <h2>France</h2>
     <div id="map"></div>
+
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         var map = L.map('map').setView([46.2276, 2.2137], 6); 
+        
+        // استخدام خريطة أساس بسيطة جداً لضمان عدم التداخل
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        // تم تغيير اسم المتغير لإجبار المتصفح على التعرف عليه كشيء جديد
-        var finalHoneyStyle = {
+        // هذا التنسيق العسلي (غير شفاف 100%)
+        var honeyTheme = {
             color: "#5d4037",
-            weight: 3,
+            weight: 2,
             fillColor: "#D2691E", // لون عسلي
             fillOpacity: 1.0,     // 100% غير شفاف
             opacity: 1
         };
 
-        var files = ['fr.geojson', 'france.geojson', 'franceregion.geojson', 'marksfrance.geojson'];
+        // مصفوفة الملفات
+        var myFiles = ['fr.geojson', 'france.geojson', 'franceregion.geojson', 'marksfrance.geojson'];
 
-        files.forEach(function(fileName) {
-            fetch(fileName + "?v=" + Math.random()) // إضافة رقم عشوائي لمنع الكاش
+        myFiles.forEach(function(fileName) {
+            // إضافة رقم عشوائي لإجبار المتصفح على جلب النسخة الجديدة
+            fetch(fileName + "?nocache=" + new Date().getTime())
                 .then(res => res.json())
                 .then(data => {
                     L.geoJSON(data, {
-                        style: function() { return finalHoneyStyle; },
+                        style: function() { return honeyTheme; },
                         pointToLayer: function (feature, latlng) {
-                            return L.circleMarker(latlng, { radius: 8, fillColor: "#8B4513", color: "#fff", weight: 2, fillOpacity: 1 });
+                            return L.circleMarker(latlng, { 
+                                radius: 8, 
+                                fillColor: "#8B4513", 
+                                color: "#fff", 
+                                weight: 2, 
+                                fillOpacity: 1 
+                            });
                         },
                         onEachFeature: function (feature, layer) {
                             var name = feature.properties.NAME_1 || feature.properties.name || "";
                             if (name) {
-                                layer.bindTooltip(name, { permanent: true, direction: "center", className: "my-label" });
+                                layer.bindTooltip(name, { 
+                                    permanent: true, 
+                                    direction: "center", 
+                                    className: "my-label" 
+                                });
                             }
                         }
                     }).addTo(map);
-                });
+                })
+                .catch(err => console.log("خطأ في التحميل"));
         });
     </script>
 </body>
