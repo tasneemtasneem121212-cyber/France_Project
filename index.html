@@ -1,58 +1,69 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>خريطة فرنسا التفاعلية - مشروع الجيوماتكس</title>
+    <title>مشروع خرائط فرنسا - تسنيم</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         #map { 
             height: 650px; 
             width: 100%; 
-            border: 2px solid #333;
-            border-radius: 12px; 
+            border: 2px solid #2c3e50;
+            border-radius: 15px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #f8f9fa; 
+            background-color: #f0f2f5; 
             padding: 20px; 
         }
-        h2 { color: #2c3e50; text-align: center; }
+        h2 { color: #2c3e50; text-align: center; margin-bottom: 20px; }
+        /* تنسيق الليبل (الأسماء) لتكون واضحة */
+        .leaflet-tooltip.my-label {
+            background-color: transparent;
+            border: none;
+            box-shadow: none;
+            color: #ffffff; /* لون الخط أبيض ليظهر فوق الحدود الغامقة */
+            font-weight: bold;
+            text-shadow: 1px 1px 2px #000; /* ظل أسود خلف النص لزيادة الوضوح */
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
 
-    <h2>خريطة فرنسا التفاعلية - عرض الطبقات المدمجة</h2>
+    <h2>خريطة فرنسا التفاعلية - عرض الطبقات مع الأسماء الثابتة</h2>
     <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        // 1. إعداد الخريطة وتركيزها على فرنسا
+        // 1. إنشاء الخريطة والتركيز على فرنسا
         var map = L.map('map').setView([46.2276, 2.2137], 6); 
 
-        // 2. إضافة خريطة الأساس (OpenStreetMap)
+        // 2. إضافة خريطة الأساس
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // 3. تعريف تنسيق الطبقات (الشفافية 20%)
+        // 3. تنسيق الطبقات (تعبئة غير شفافة تماماً)
         var layerStyle = {
-            color: "#2980b9",     // لون الخط الخارجي (أزرق)
-            weight: 2,            // سماكة الخط
-            fillColor: "#3498db", // لون التعبئة
-            fillOpacity: 0.2,     // شفافية 20% كما طلبتِ
-            opacity: 1            // وضوح الخط الخارجي
+            color: "#2c3e50",     // لون الخط الفاصل
+            weight: 2,            
+            fillColor: "#3498db", // لون التعبئة (أزرق)
+            fillOpacity: 1.0,     // غير شفاف تماماً (Solid)
+            opacity: 1            
         };
 
-        // 4. تنسيق النقاط (المعالم) لتظهر كدوائر بدلاً من رموز زرقاء
+        // 4. تنسيق نقاط المعالم
         var pointStyle = {
-            radius: 6,
+            radius: 7,
             fillColor: "#e67e22",
-            color: "#000",
+            color: "#fff",
             weight: 1,
             opacity: 1,
-            fillOpacity: 0.8
+            fillOpacity: 1.0
         };
 
-        // 5. مصفوفة بأسماء الملفات التي رفعتِها في المستودع
+        // 5. مصفوفة الملفات المرفوعة
         var geojsonFiles = [
             { name: 'fr.geojson', type: 'polygon' },
             { name: 'france.geojson', type: 'polygon' },
@@ -60,7 +71,7 @@
             { name: 'marksfrance.geojson', type: 'point' }
         ];
 
-        // 6. استدعاء ودمج الملفات تلقائياً
+        // 6. تحميل ومعالجة البيانات
         geojsonFiles.forEach(function(file) {
             fetch(file.name)
                 .then(res => res.json())
@@ -73,18 +84,27 @@
                             }
                         },
                         onEachFeature: function (feature, layer) {
-                            // إظهار الاسم عند الضغط (إذا كان موجوداً في البيانات)
-                            var popupContent = "معلومات الطبقة";
-                            if (feature.properties) {
-                                if (feature.properties.NAME_1) popupContent = "المنطقة: " + feature.properties.NAME_1;
-                                else if (feature.properties.name) popupContent = "المعلم: " + feature.properties.name;
+                            // التحقق من وجود اسم في بيانات الملف
+                            var name = feature.properties.NAME_1 || feature.properties.name || "";
+                            
+                            if (name !== "") {
+                                // أ. إضافة فقاعة عند الضغط (Popup)
+                                layer.bindPopup("الاسم: " + name);
+
+                                // ب. إضافة ليبل ثابت يظهر دائماً (Tooltip)
+                                layer.bindTooltip(name, {
+                                    permanent: true,     // ليبل دائم
+                                    direction: "center", // في المنتصف
+                                    className: "my-label", // تنسيق CSS بالأعلى
+                                    offset: [0, 0]
+                                });
                             }
-                            layer.bindPopup(popupContent);
                         }
                     }).addTo(map);
                 })
-                .catch(err => console.log("خطأ في تحميل ملف: " + file.name));
+                .catch(err => console.log("خطأ في ملف: " + file.name));
         });
     </script>
 </body>
 </html>
+
