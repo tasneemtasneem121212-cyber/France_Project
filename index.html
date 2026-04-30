@@ -1,83 +1,90 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>خريطة فرنسا التفاعلية</title>
+    <title>خريطة فرنسا التفاعلية - مشروع الجيوماتكس</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
-        #map { height: 600px; width: 100%; border-radius: 10px; }
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
+        #map { 
+            height: 650px; 
+            width: 100%; 
+            border: 2px solid #333;
+            border-radius: 12px; 
+        }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f8f9fa; 
+            padding: 20px; 
+        }
+        h2 { color: #2c3e50; text-align: center; }
     </style>
 </head>
 <body>
-    <h2 style="text-align:center;">مشروع تحليل خرائط فرنسا - الجيوماتكس</h2>
+
+    <h2>خريطة فرنسا التفاعلية - عرض الطبقات المدمجة</h2>
     <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        // إعداد الخريطة والمركز
+        // 1. إعداد الخريطة وتركيزها على فرنسا
         var map = L.map('map').setView([46.2276, 2.2137], 6); 
 
-        // إضافة خريطة الأساس (يمكنك تغيير شكلها من هنا)
+        // 2. إضافة خريطة الأساس (OpenStreetMap)
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap'
+            attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // وظيفة لتنسيق شكل النقاط (التي كانت زرقاء)
-        var geojsonMarkerOptions = {
+        // 3. تعريف تنسيق الطبقات (الشفافية 20%)
+        var layerStyle = {
+            color: "#2980b9",     // لون الخط الخارجي (أزرق)
+            weight: 2,            // سماكة الخط
+            fillColor: "#3498db", // لون التعبئة
+            fillOpacity: 0.2,     // شفافية 20% كما طلبتِ
+            opacity: 1            // وضوح الخط الخارجي
+        };
+
+        // 4. تنسيق النقاط (المعالم) لتظهر كدوائر بدلاً من رموز زرقاء
+        var pointStyle = {
             radius: 6,
-            fillColor: "#e67e22", // لون برتقالي للنقاط
+            fillColor: "#e67e22",
             color: "#000",
             weight: 1,
             opacity: 1,
             fillOpacity: 0.8
         };
 
-        // قائمة الملفات التي رفعتِها
-        var layers = [
-            { name: 'fr.geojson', color: '#2980b9' },      // لون حدود فرنسا
-            { name: 'franceregion.geojson', color: '#8e44ad' }, // لون المناطق
-            { name: 'marksfrance.geojson', isPoint: true }  // النقاط (المعالم)
+        // 5. مصفوفة بأسماء الملفات التي رفعتِها في المستودع
+        var geojsonFiles = [
+            { name: 'fr.geojson', type: 'polygon' },
+            { name: 'france.geojson', type: 'polygon' },
+            { name: 'franceregion.geojson', type: 'polygon' },
+            { name: 'marksfrance.geojson', type: 'point' }
         ];
 
-        layers.forEach(function(layerConfig) {
-            fetch(layerConfig.name)
+        // 6. استدعاء ودمج الملفات تلقائياً
+        geojsonFiles.forEach(function(file) {
+            fetch(file.name)
                 .then(res => res.json())
                 .then(data => {
                     L.geoJSON(data, {
-                        // تنسيق المضلعات (الحدود)
-                        style: function() {
-                            return {
-                                color: layerConfig.color || "#333",
-                                weight: 2,
-                                fillOpacity: 0.1
-                            };
-                        },
-                        // تنسيق النقاط (المعالم)
+                        style: function() { return layerStyle; },
                         pointToLayer: function (feature, latlng) {
-                            if (layerConfig.isPoint) {
-                                return L.circleMarker(latlng, geojsonMarkerOptions);
+                            if (file.type === 'point') {
+                                return L.circleMarker(latlng, pointStyle);
                             }
                         },
-                        // إضافة ميزة ظهور الاسم عند الضغط
                         onEachFeature: function (feature, layer) {
-                            if (feature.properties && feature.properties.NAME_1) {
-                                layer.bindPopup("المنطقة: " + feature.properties.NAME_1);
-                            } else if (feature.properties && feature.properties.name) {
-                                layer.bindPopup("المعلم: " + feature.properties.name);
+                            // إظهار الاسم عند الضغط (إذا كان موجوداً في البيانات)
+                            var popupContent = "معلومات الطبقة";
+                            if (feature.properties) {
+                                if (feature.properties.NAME_1) popupContent = "المنطقة: " + feature.properties.NAME_1;
+                                else if (feature.properties.name) popupContent = "المعلم: " + feature.properties.name;
                             }
+                            layer.bindPopup(popupContent);
                         }
                     }).addTo(map);
-                });
+                })
+                .catch(err => console.log("خطأ في تحميل ملف: " + file.name));
         });
     </script>
 </body>
 </html>
-style: function(feature) {
-    return {
-        fillColor: "#3498db", // اختاري اللون الذي تفضلينه هنا (مثلاً الأزرق)
-        fillOpacity: 0.5,    // درجة الشفافية (0 تعني شفاف تماماً، و 1 تعني لون مصمت)
-        color: "#2980b9",     // لون خط الحدود نفسه
-        weight: 2,            // سماكة خط الحدود
-        opacity: 1            // شفافية خط الحدود
-    };
-}
