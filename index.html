@@ -4,112 +4,56 @@
     <title>France Map Project</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
-        #map { 
-            height: 650px; 
-            width: 100%; 
-            border: 3px solid #5d4037; /* إطار بني غامق متناسق مع اللون العسلي */
-            border-radius: 15px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #fdf5e6; /* خلفية الصفحة كريمي هادئ */
-            padding: 20px; 
-        }
-        h2 { 
-            color: #5d4037; 
-            text-align: center; 
-            font-size: 36px;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-        /* تنسيق الليبل (الأسماء) لتكون واضحة فوق اللون العسلي */
+        #map { height: 650px; width: 100%; border: 3px solid #5d4037; border-radius: 15px; }
+        body { font-family: sans-serif; background-color: #fdf5e6; padding: 20px; }
+        h2 { color: #5d4037; text-align: center; font-size: 36px; font-weight: bold; }
         .leaflet-tooltip.my-label {
-            background: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.9);
             border: 1px solid #5d4037;
             font-weight: bold;
             color: #5d4037;
             padding: 2px 8px;
             border-radius: 4px;
-            font-size: 13px;
         }
     </style>
 </head>
 <body>
-
     <h2>France</h2>
     <div id="map"></div>
-
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        // 1. إنشاء الخريطة والتركيز على فرنسا
         var map = L.map('map').setView([46.2276, 2.2137], 6); 
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        // 2. إضافة خريطة الأساس (OpenStreetMap)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap'
-        }).addTo(map);
-
-        // 3. تنسيق اللون البني العسلي (Honey Brown) وغير الشفاف تماماً
-        var honeyStyle = {
-            color: "#5d4037",     // لون الحدود الخارجية (بني غامق)
-            weight: 2,            
-            fillColor: "#D2691E", // اللون العسلي المطلوب
-            fillOpacity: 1.0,     // غير شفاف بنسبة 100%
-            opacity: 1            
+        // تم تغيير اسم المتغير لإجبار المتصفح على التعرف عليه كشيء جديد
+        var finalHoneyStyle = {
+            color: "#5d4037",
+            weight: 3,
+            fillColor: "#D2691E", // لون عسلي
+            fillOpacity: 1.0,     // 100% غير شفاف
+            opacity: 1
         };
 
-        // 4. تنسيق نقاط المعالم (التي كانت زرقاء) لتناسب التصميم الجديد
-        var pointStyle = {
-            radius: 7,
-            fillColor: "#8B4513",
-            color: "#ffffff",
-            weight: 1.5,
-            fillOpacity: 1.0
-        };
+        var files = ['fr.geojson', 'france.geojson', 'franceregion.geojson', 'marksfrance.geojson'];
 
-        // 5. قائمة الملفات المرفوعة في المستودع (بناءً على ملفاتك المرفوعة)
-        var geojsonFiles = [
-            { name: 'fr.geojson', type: 'polygon' },
-            { name: 'france.geojson', type: 'polygon' },
-            { name: 'franceregion.geojson', type: 'polygon' },
-            { name: 'marksfrance.geojson', type: 'point' }
-        ];
-
-        // 6. جلب الملفات ورسمها على الخريطة
-        geojsonFiles.forEach(function(file) {
-            fetch(file.name)
+        files.forEach(function(fileName) {
+            fetch(fileName + "?v=" + Math.random()) // إضافة رقم عشوائي لمنع الكاش
                 .then(res => res.json())
                 .then(data => {
                     L.geoJSON(data, {
-                        style: function() { return honeyStyle; },
+                        style: function() { return finalHoneyStyle; },
                         pointToLayer: function (feature, latlng) {
-                            if (file.type === 'point') {
-                                return L.circleMarker(latlng, pointStyle);
-                            }
+                            return L.circleMarker(latlng, { radius: 8, fillColor: "#8B4513", color: "#fff", weight: 2, fillOpacity: 1 });
                         },
                         onEachFeature: function (feature, layer) {
-                            // جلب الاسم من جدول البيانات (NAME_1 أو name)
-                            var labelName = feature.properties.NAME_1 || feature.properties.name || "";
-                            
-                            if (labelName !== "") {
-                                // إضافة الاسم كـ ليبل ثابت (Label)
-                                layer.bindTooltip(labelName, { 
-                                    permanent: true,     // يظهر دائماً
-                                    direction: "center", // في منتصف المنطقة
-                                    className: "my-label",
-                                    offset: [0, 0]
-                                });
-
-                                // إضافة منبثق عند الضغط (Popup)
-                                layer.bindPopup("الاسم: " + labelName);
+                            var name = feature.properties.NAME_1 || feature.properties.name || "";
+                            if (name) {
+                                layer.bindTooltip(name, { permanent: true, direction: "center", className: "my-label" });
                             }
                         }
                     }).addTo(map);
-                })
-                .catch(err => console.log("تعذر تحميل الملف: " + file.name));
+                });
         });
     </script>
 </body>
 </html>
-     
